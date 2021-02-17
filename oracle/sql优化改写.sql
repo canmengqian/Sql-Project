@@ -175,3 +175,50 @@ select EMPNO, ENAME, MGR, sys_connect_by_path(ENAME, ',') 路径
 from EMP
 start with EMPNO = 7566
 connect by (prior EMPNO) = MGR;
+
+-- 12.4 树形排序 SIBLINGS
+select DEPTNO,LPAD('-', (LEVEL - 1) * 2, '-')||EMPNO AS 编号, ENAME, MGR,  prior (ENAME) as 主管,LEVEL
+from EMP
+start with EMPNO = 7566
+connect by (prior EMPNO) = MGR
+ORDER SIBLINGS BY EMPNO;
+
+-- 12.6 , 12.7 分支查询,剪枝查询
+-- 分支查询
+select DEPTNO,LPAD('-', (LEVEL - 1) * 2, '-')||EMPNO AS 编号, ENAME, MGR,  prior (ENAME) as 主管,LEVEL
+from EMP
+start with EMPNO = 7902
+connect by (prior EMPNO) = MGR
+ORDER SIBLINGS BY EMPNO;
+-- 剪枝查询
+select DEPTNO,LPAD('-', (LEVEL - 1) * 2, '-')||EMPNO AS 编号, ENAME, MGR,  prior (ENAME) as 主管,LEVEL
+from EMP
+start with EMPNO = 7566
+connect by (prior EMPNO) = MGR AND EMPNO != 7788
+ORDER SIBLINGS BY EMPNO;
+
+--12.8 TODO
+--14.3 TODO
+
+--14.13
+select  * from EMP where   ENAME = TO_CHAR(EMPNO);
+
+explain plan  for select * from DEPT where DEPTNO is null;
+
+select * from table ( DBMS_XPLAN.DISPLAY() )  ;
+
+select  * from emp2;
+create  table  emp3 as select * from emp2 where 1=2;
+select count(*) as cnt , sum(sal) as sal from emp3 where ename='1';
+select  count(*) as cnt , sum(sal) as sal from emp3 where ename='1' group by sal;
+-- 求占比
+with T as (
+    select 0.558 as n from dual
+    union
+    select 0.335 as n from dual
+    union
+    select 0.107 as n from dual
+    )
+select before,total,case  when total>1 then before+1-total else before end as after from
+(select nt as before,sum(nt) over (order by nt) as total from
+(select round(n/sum(n)over (),2)   as nt from T) order by before desc ) ;
